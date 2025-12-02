@@ -4,6 +4,7 @@
 
 # --- CONFIGURATION ---
 $SSID = "YourSSIDHere"
+$SSDIDHEX = $SSID | ForEach-Object { [System.Text.Encoding]::UTF8.GetBytes($_) } | ForEach-Object { "{0:X2}" -f $_ } | Out-String
 
 # List of passwords in order (Jan → Dec, or however your rotation works)
 $Passwords = @(
@@ -33,29 +34,36 @@ foreach ($pw in $Passwords) {
 
     # Build XML profile dynamically
     $xml = @"
+<?xml version="1.0"?>
 <WLANProfile xmlns="http://www.microsoft.com/networking/WLAN/profile/v1">
-  <name>$SSID</name>
-  <SSIDConfig>
-    <SSID>
-      <name>$SSID</name>
-    </SSID>
-  </SSIDConfig>
-  <connectionType>ESS</connectionType>
-  <connectionMode>manual</connectionMode>
-  <MSM>
-    <security>
-      <authEncryption>
-        <authentication>WPA2PSK</authentication>
-        <encryption>AES</encryption>
-        <useOneX>false</useOneX>
-      </authEncryption>
-      <sharedKey>
-        <keyType>passPhrase</keyType>
-        <protected>false</protected>
-        <keyMaterial>$pw</keyMaterial>
-      </sharedKey>
-    </security>
-  </MSM>
+	<name>$SSID</name>
+	<SSIDConfig>
+		<SSID>
+			<hex>$SSDIDHEX</hex>
+			<name>$SSID</name>
+		</SSID>
+	</SSIDConfig>
+	<connectionType>ESS</connectionType>
+	<connectionMode>manual</connectionMode>
+	<MSM>
+		<security>
+			<authEncryption>
+				<authentication>WPA3SAE</authentication>
+				<encryption>AES</encryption>
+				<useOneX>false</useOneX>
+				<transitionMode xmlns="http://www.microsoft.com/networking/WLAN/profile/v4">true</transitionMode>
+			</authEncryption>
+			<sharedKey>
+				<keyType>passPhrase</keyType>
+				<protected>false</protected>
+				<keyMaterial>$pw</keyMaterial>
+			</sharedKey>
+		</security>
+	</MSM>
+	<MacRandomization xmlns="http://www.microsoft.com/networking/WLAN/profile/v3">
+		<enableRandomization>false</enableRandomization>
+		<randomizationSeed>1123036468</randomizationSeed>
+	</MacRandomization>
 </WLANProfile>
 "@
 
