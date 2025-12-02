@@ -56,7 +56,7 @@ foreach ($i in $tryIndexes) {
 		</SSID>
 	</SSIDConfig>
 	<connectionType>ESS</connectionType>
-	<connectionMode>manual</connectionMode>
+	<connectionMode>auto</connectionMode>
 	<MSM>
 		<security>
 			<authEncryption>
@@ -72,10 +72,6 @@ foreach ($i in $tryIndexes) {
 			</sharedKey>
 		</security>
 	</MSM>
-	<MacRandomization xmlns="http://www.microsoft.com/networking/WLAN/profile/v3">
-		<enableRandomization>false</enableRandomization>
-		<randomizationSeed>1123036468</randomizationSeed>
-	</MacRandomization>
 </WLANProfile>
 "@
 
