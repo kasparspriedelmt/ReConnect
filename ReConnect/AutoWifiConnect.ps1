@@ -23,14 +23,25 @@ $Passwords = @(
 )
 
 # --- SCRIPT LOGIC ---
-Write-Host "Attempting to connect to SSID: $SSID" -ForegroundColor Cyan
+# Get current month number (1–12)
+$month = (Get-Date).Month
+Write-Host "Current month detected: $month" -ForegroundColor Cyan
 
-foreach ($pw in $Passwords) {
-    Write-Host "Trying password: $pw" -ForegroundColor Yellow
+# Index into password list (PowerShell arrays are 0-based)
+$currentIndex = $month - 1
+$tryIndexes = @($currentIndex)
 
-    # Update Wi-Fi profile with current password
-    netsh wlan delete profile name=$SSID | Out-Null
-    netsh wlan add profile filename="$env:TEMP\wifi.xml" | Out-Null
+# Add previous month index if available
+if ($currentIndex -gt 0) {
+    $tryIndexes += ($currentIndex - 1)
+} else {
+    # If January fails, fallback to December
+    $tryIndexes += 11
+}
+
+foreach ($i in $tryIndexes) {
+    $pw = $Passwords[$i]
+    Write-Host "Trying password for index $i (Month $($i+1)): $pw" -ForegroundColor
 
     # Build XML profile dynamically
     $xml = @"
@@ -67,12 +78,15 @@ foreach ($pw in $Passwords) {
 </WLANProfile>
 "@
 
-    $xml | Set-Content "$env:TEMP\wifi.xml"
+    $profilePath = "$env:TEMP\wifi.xml"
+    $xml | Set-Content $profilePath
 
-    # Add profile and attempt connection
-    netsh wlan add profile filename="$env:TEMP\wifi.xml" | Out-Null
+    # Delete old profile and add new one
+    netsh wlan delete profile name=$SSID | Out-Null
+    netsh wlan add profile filename=$profilePath | Out-Null
+
+    # Attempt connection
     netsh wlan connect name=$SSID ssid=$SSID | Out-Null
-
     Start-Sleep -Seconds 10
 
     # Check connection status
