@@ -4,7 +4,7 @@
 
 # --- CONFIGURATION ---
 $SSID = "YourSSIDHere"
-$SSDIDHEX = $SSID | ForEach-Object { [System.Text.Encoding]::UTF8.GetBytes($_) } | ForEach-Object { "{0:X2}" -f $_ } | Out-String
+$SSIDHEX = -join ($SSID.ToCharArray() | ForEach-Object { "{0:X2}" -f [int][char]$_ })
 
 # List of passwords in order (Jan → Dec, or however your rotation works)
 $Passwords = @(
@@ -25,7 +25,8 @@ $Passwords = @(
 # --- SCRIPT LOGIC ---
 # Get current month number (1–12)
 $month = (Get-Date).Month
-Write-Host "Current month detected: $month" -ForegroundColor Cyan
+Write-Host "Current month detected: $month"
+Write-Host "Connecting to $SSID with Hex: $SSIDHEX"
 
 # Index into password list (PowerShell arrays are 0-based)
 $currentIndex = $month - 1
@@ -41,7 +42,7 @@ if ($currentIndex -gt 0) {
 
 foreach ($i in $tryIndexes) {
     $pw = $Passwords[$i]
-    Write-Host "Trying password for index $i (Month $($i+1)): $pw" -ForegroundColor
+    Write-Host "Trying password for index $i (Month $($i+1)): $pw"
 
     # Build XML profile dynamically
     $xml = @"
@@ -50,7 +51,7 @@ foreach ($i in $tryIndexes) {
 	<name>$SSID</name>
 	<SSIDConfig>
 		<SSID>
-			<hex>$SSDIDHEX</hex>
+			<hex>$SSIDHEX</hex>
 			<name>$SSID</name>
 		</SSID>
 	</SSIDConfig>
@@ -92,9 +93,9 @@ foreach ($i in $tryIndexes) {
     # Check connection status
     $status = netsh wlan show interfaces | Select-String "State"
     if ($status -match "connected") {
-        Write-Host "✅ Connected successfully with password: $pw" -ForegroundColor Green
+        Write-Host "Connected successfully with password: $pw"
         break
     } else {
-        Write-Host "❌ Failed with password: $pw" -ForegroundColor Red
+        Write-Host "Failed with password: $pw"
     }
 }
